@@ -31,6 +31,10 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Campaign data — keep the folder but ignore its contents
+campaigns_data/*
+!campaigns_data/.gitkeep
+
 .idea/
 .vscode/
 *.swp
