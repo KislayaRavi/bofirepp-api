@@ -41,4 +41,3 @@ campaigns_data/*
 
 # Add poetry.lock
 poetry.lock
-pyproject.toml

@@ -86,7 +86,7 @@ app = FastAPI(
             "name": "LLM",
             "description": (
                 "Single-turn text generation via Apollo-backed LLMs "
-                "(OpenAI and Anthropic)."
+                "(OpenAI, Anthropic) and Google Gemini."
             ),
         },
     ],

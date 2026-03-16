@@ -10,8 +10,9 @@ router = APIRouter(prefix="/llm", tags=["LLM"])
 
 
 class LLMProvider(str, Enum):
-    openai = "openai"
-    anthropic = "anthropic"
+    # openai = "openai"
+    # anthropic = "anthropic"
+    gemini = "gemini"
 
 
 class LLMCompleteRequest(BaseModel):
@@ -22,8 +23,9 @@ class LLMCompleteRequest(BaseModel):
     model_name: Optional[str] = Field(
         default=None,
         description=(
-            "Model identifier. Defaults to ``gpt-4o-mini`` for OpenAI "
-            "and ``claude_3_5_haiku`` for Anthropic when omitted."
+            "Model identifier. Defaults to ``gpt-4o-mini`` for OpenAI, "
+            "``claude_3_5_haiku`` for Anthropic, and ``gemini-2.5-flash`` "
+            "for Gemini when omitted."
         ),
     )
     message: str = Field(..., description="The user message to send to the model.")
@@ -54,17 +56,24 @@ def llm_complete(request: LLMCompleteRequest) -> LLMCompleteResponse:
         kwargs["temperature"] = request.temperature
 
     try:
-        if request.provider == LLMProvider.openai:
-            from llm.apollo import ApolloOpenAIClient
+        # if request.provider == LLMProvider.openai:
+        #     from llm.apollo import ApolloOpenAIClient
 
-            client = ApolloOpenAIClient(
-                model_name=request.model_name or "gpt-4o-mini"
-            )
-        else:
-            from llm.apollo import ApolloAnthropicClient
+        #     client = ApolloOpenAIClient(
+        #         model_name=request.model_name or "gpt-4o-mini"
+        #     )
+        # elif request.provider == LLMProvider.anthropic:
+        #     from llm.apollo import ApolloAnthropicClient
 
-            client = ApolloAnthropicClient(
-                model_name=request.model_name or "claude_3_5_haiku"
+        #     client = ApolloAnthropicClient(
+        #         model_name=request.model_name or "claude_3_5_haiku"
+        #     )
+        # else:
+        if request.provider == LLMProvider.gemini:
+            from llm.gemini import GeminiClient
+
+            client = GeminiClient(
+                model_name=request.model_name or "gemini-2.5-flash"
             )
 
         text = client.complete(request.message, **kwargs)
