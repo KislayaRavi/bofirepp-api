@@ -52,10 +52,10 @@ OutputFeature = ContinuousOutputFeature
 class DomainCreate(BaseModel):
     name: str = Field(..., description="Human-readable name for the optimization domain")
     input_features: List[InputFeature] = Field(
-        ..., description="List of input features describing the design space"
+        ..., min_length=1, description="List of input features describing the design space"
     )
     output_features: List[OutputFeature] = Field(
-        ..., description="List of output features (objectives) to optimize"
+        ..., min_length=1, description="List of output features (objectives) to optimize"
     )
 
     model_config = {
