@@ -1,0 +1,51 @@
+{
+  "type": "RandomStrategy",
+  "domain": {
+    "type": "Domain",
+    "inputs": {
+      "type": "Inputs",
+      "features": [
+        {
+          "type": "ContinuousInput",
+          "key": "temperature",
+          "unit": null,
+          "bounds": [
+            50.0,
+            200.0
+          ],
+          "local_relative_bounds": null,
+          "stepsize": null,
+          "allow_zero": false
+        }
+      ]
+    },
+    "outputs": {
+      "type": "Outputs",
+      "features": [
+        {
+          "type": "ContinuousOutput",
+          "key": "yield",
+          "unit": null,
+          "objective": {
+            "type": "MaximizeObjective",
+            "w": 1.0,
+            "bounds": [
+              0,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    "constraints": {
+      "type": "Constraints",
+      "constraints": []
+    }
+  },
+  "seed": null,
+  "fallback_sampling_method": "UNIFORM",
+  "n_burnin": 1000,
+  "n_thinning": 32,
+  "num_base_samples": null,
+  "max_iters": 1000
+}

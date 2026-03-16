@@ -1,56 +1,41 @@
 """
 Shared fixtures for the BoFire++ API test suite.
 
-Campaign tests use an in-memory SQLite database so they are fully isolated
-from the production database file.  Domain/Experiment/Strategy tests use the
-same in-memory store that the router module keeps, which is reset between
-test functions by the `reset_domain_store` autouse fixture.
+Campaign tests use a temporary directory on disk so they are fully isolated
+from the production campaign folder.  Domain/Experiment/Strategy tests use the
+same in-memory store that the router module keeps, which is reset between test
+functions by the `reset_domain_store` autouse fixture.
 """
+import shutil
 import sys
 import os
+import tempfile
+from pathlib import Path
+
 import pytest
 
 # Make the bofire-api package root importable regardless of how pytest is invoked
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
-
-from database import Base, get_db
-import db.models  # noqa: F401 — imports all ORM models so Base.metadata knows about them
+from storage import CampaignStore, get_campaign_store
 
 
-# ── Test database (in-memory SQLite, shared connection) ───────────────────────
+# ── Temporary campaign storage (one dir for the whole test session) ───────────
 
-TEST_DATABASE_URL = "sqlite://"  # in-memory
-
-test_engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
-
-# Create all tables once per test session
-Base.metadata.create_all(bind=test_engine)
+_tmp_dir = tempfile.mkdtemp(prefix="bofire_test_campaigns_")
 
 
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def _override_get_campaign_store() -> CampaignStore:
+    return CampaignStore(Path(_tmp_dir))
 
 
-# ── App fixture ───────────────────────────────────────────────────────────────
+# ── App & client fixtures ─────────────────────────────────────────────────────
 
 @pytest.fixture(scope="session")
 def app():
     from main import app as fastapi_app
-    fastapi_app.dependency_overrides[get_db] = override_get_db
+    fastapi_app.dependency_overrides[get_campaign_store] = _override_get_campaign_store
     return fastapi_app
 
 
@@ -60,17 +45,18 @@ def client(app):
         yield c
 
 
-# ── Clean campaign table between tests ───────────────────────────────────────
+# ── Clean campaign folder between tests ───────────────────────────────────────
 
 @pytest.fixture(autouse=True)
 def clean_campaigns():
-    """Wipe the campaigns table before every test so tests are independent."""
-    from db.models import Campaign
-    db = TestingSessionLocal()
-    db.query(Campaign).delete()
-    db.commit()
-    db.close()
+    """Wipe all campaign sub-folders before every test so tests are independent."""
+    for item in Path(_tmp_dir).iterdir():
+        if item.is_dir():
+            shutil.rmtree(item)
     yield
+    for item in Path(_tmp_dir).iterdir():
+        if item.is_dir():
+            shutil.rmtree(item)
 
 
 # ── Reset in-memory domain store between tests ───────────────────────────────
@@ -85,7 +71,7 @@ def reset_domain_store():
     store.clear()
 
 
-# ── Reusable domain payload ───────────────────────────────────────────────────
+# ── Reusable payloads ─────────────────────────────────────────────────────────
 
 DOMAIN_PAYLOAD = {
     "name": "Test Domain",

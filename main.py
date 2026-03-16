@@ -9,16 +9,18 @@ from fastapi.responses import RedirectResponse
 sys.path.insert(0, os.path.dirname(__file__))
 
 from core.config import settings
-from database import init_db
+from storage import init_storage
 from routers import health, domains, experiments, strategies
 from routers import campaigns
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialise SQLite database and create tables
-    init_db()
+    # Ensure the campaigns folder exists on disk
+    init_storage()
     print(f"Starting {settings.app_name} v{settings.app_version}")
+    storage_path = os.environ.get("DATABASE_PATH", "campaigns_data")
+    print(f"Campaign storage: {os.path.abspath(storage_path)}")
     try:
         import bofire
         print(f"BoFire version: {bofire.__version__}")
@@ -53,9 +55,11 @@ app = FastAPI(
             "name": "Campaigns",
             "description": (
                 "A **Campaign** is the top-level container for an optimization problem. "
-                "It holds the BoFire domain (design space + objectives), an optional strategy, "
-                "optional LLM context, all experiment observations, and a full history of proposals. "
-                "All optimization work should be done through campaigns."
+                "Each campaign is persisted as a **folder on disk** containing:\n\n"
+                "- **campaign.json** — all campaign data in human-readable form\n"
+                "- **strategy.json** — the serialized BoFire strategy spec (written by the "
+                "serialize endpoint)\n\n"
+                "The root folder is configured via the `DATABASE_PATH` environment variable."
             ),
         },
         {

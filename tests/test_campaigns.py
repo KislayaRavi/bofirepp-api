@@ -1,4 +1,4 @@
-"""Tests for the /campaigns endpoints (SQLite-backed, fully isolated)."""
+"""Tests for the /campaigns endpoints (file-system backed, fully isolated)."""
 import pytest
 from tests.conftest import CAMPAIGN_PAYLOAD, DOMAIN_PAYLOAD, EXPERIMENT_ROWS
 
@@ -62,7 +62,6 @@ def test_list_campaigns_returns_summaries(client):
     _create_campaign(client, {**CAMPAIGN_PAYLOAD, "name": "Second"})
     summaries = client.get("/campaigns").json()
     assert len(summaries) == 2
-    # Summary fields
     for s in summaries:
         assert "id" in s
         assert "n_proposals" in s
@@ -255,9 +254,7 @@ def test_proposal_keys_are_sequential(client):
     created = _create_campaign(client)
     cid = created["id"]
     client.post(f"/campaigns/{cid}/experiments", json={"data": EXPERIMENT_ROWS})
-    # initial_proposal
     client.post(f"/campaigns/{cid}/proposals/generate", json={})
-    # proposal1
     client.post(f"/campaigns/{cid}/proposals/generate", json={})
     proposals = client.get(f"/campaigns/{cid}/proposals").json()
     assert "initial_proposal" in proposals
@@ -300,3 +297,74 @@ def test_get_proposals_endpoint(client):
     proposals = client.get(f"/campaigns/{cid}/proposals").json()
     assert isinstance(proposals, dict)
     assert "initial_proposal" in proposals
+
+
+# ── Strategy serialization ────────────────────────────────────────────────────
+
+def test_serialize_strategy_returns_201(client):
+    created = _create_campaign(client)
+    resp = client.post(f"/campaigns/{created['id']}/strategy/serialize")
+    assert resp.status_code == 201
+
+
+def test_serialize_strategy_contains_bofire_spec(client):
+    created = _create_campaign(client)
+    body = client.post(f"/campaigns/{created['id']}/strategy/serialize").json()
+    assert "type" in body
+    assert "domain" in body
+
+
+def test_serialize_strategy_without_strategy_returns_422(client):
+    payload = {k: v for k, v in CAMPAIGN_PAYLOAD.items() if k != "strategy"}
+    created = _create_campaign(client, payload)
+    resp = client.post(f"/campaigns/{created['id']}/strategy/serialize")
+    assert resp.status_code == 422
+
+
+def test_get_serialized_strategy_returns_saved_spec(client):
+    created = _create_campaign(client)
+    cid = created["id"]
+    saved = client.post(f"/campaigns/{cid}/strategy/serialize").json()
+    fetched = client.get(f"/campaigns/{cid}/strategy/serialize").json()
+    assert fetched == saved
+
+
+def test_get_serialized_strategy_before_serialize_returns_404(client):
+    created = _create_campaign(client)
+    resp = client.get(f"/campaigns/{created['id']}/strategy/serialize")
+    assert resp.status_code == 404
+
+
+def test_serialize_all_strategy_types(client):
+    # sobo and random work with a single-output domain
+    for strategy in ["random", "sobo"]:
+        c = _create_campaign(client)
+        client.patch(
+            f"/campaigns/{c['id']}/strategy",
+            json={"strategy": strategy, "n_candidates": 1},
+        )
+        resp = client.post(f"/campaigns/{c['id']}/strategy/serialize")
+        assert resp.status_code == 201, f"Failed for strategy '{strategy}': {resp.text}"
+        assert "type" in resp.json()
+
+    # mobo and qparego require at least two output features
+    multi_output_payload = {
+        "name": "Multi-output test campaign",
+        "domain": {
+            **DOMAIN_PAYLOAD,
+            "output_features": [
+                {"key": "yield", "type": "continuous", "objective": "maximize"},
+                {"key": "purity", "type": "continuous", "objective": "maximize"},
+            ],
+        },
+        "strategy": {"strategy": "random", "n_candidates": 1},
+    }
+    for strategy in ["mobo", "qparego"]:
+        c = _create_campaign(client, multi_output_payload)
+        client.patch(
+            f"/campaigns/{c['id']}/strategy",
+            json={"strategy": strategy, "n_candidates": 1},
+        )
+        resp = client.post(f"/campaigns/{c['id']}/strategy/serialize")
+        assert resp.status_code == 201, f"Failed for strategy '{strategy}': {resp.text}"
+        assert "type" in resp.json()
