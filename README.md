@@ -19,7 +19,14 @@ A **FastAPI** REST service wrapping [BoFire](https://github.com/experimental-des
 ### 1. Install dependencies
 
 ```bash
-pip install -r requirements.txt
+# Core dependencies
+pip install .
+
+# With BoFire optimization extras (Bayesian strategies, PyTorch, BoTorch)
+pip install ".[optimization]"
+
+# With development tools (pytest, ruff, mypy)
+pip install ".[dev]"
 ```
 
 ### 2. Run the server
@@ -95,10 +102,16 @@ bofire-api/
 
 ## Dependencies
 
-- [FastAPI](https://fastapi.tiangolo.com/) — web framework
-- [Uvicorn](https://www.uvicorn.org/) — ASGI server
-- [BoFire](https://github.com/experimental-design/bofire) — Bayesian optimization
-- [Pydantic v2](https://docs.pydantic.dev/) — data validation
+Managed via `pyproject.toml`.
+
+| Package | Role |
+|---------|------|
+| [FastAPI](https://fastapi.tiangolo.com/) | Web framework + Swagger UI |
+| [Uvicorn](https://www.uvicorn.org/) | ASGI server |
+| [BoFire](https://github.com/experimental-design/bofire) | Bayesian optimization |
+| [Pydantic v2](https://docs.pydantic.dev/) | Data validation |
+| [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) | Configuration via env vars |
+| torch + botorch | Surrogate models (optional, `.[optimization]`) |
 
 ## License
 
