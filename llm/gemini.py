@@ -59,13 +59,27 @@ class GeminiClient(LLMClient):
     ) -> None:
         super().__init__(model_name)
 
-        resolved_api_key = api_key or os.environ.get("AI_INTEGRATIONS_GEMINI_API_KEY", "")
+        # Resolution order:
+        #   1. api_key argument (explicit override)
+        #   2. GEMINI_API_KEY secret (user-supplied key)
+        #   3. AI_INTEGRATIONS_GEMINI_API_KEY (Replit proxy — set automatically)
+        resolved_api_key = (
+            api_key
+            or os.environ.get("GEMINI_API_KEY")
+            or os.environ.get("AI_INTEGRATIONS_GEMINI_API_KEY", "")
+        )
+
+        # Resolution order for base URL:
+        #   1. base_url argument (explicit override)
+        #   2. AI_INTEGRATIONS_GEMINI_BASE_URL (Replit proxy)
+        #   3. None → SDK uses the real Gemini API endpoint
         resolved_base_url = base_url or os.environ.get("AI_INTEGRATIONS_GEMINI_BASE_URL")
 
         if not resolved_api_key:
             raise EnvironmentError(
-                "Gemini API key not found. Set the AI_INTEGRATIONS_GEMINI_API_KEY "
-                "environment variable or pass api_key= directly."
+                "Gemini API key not found. "
+                "Set the GEMINI_API_KEY environment variable to your Google AI Studio key, "
+                "or pass api_key= directly to GeminiClient()."
             )
 
         from google import genai
