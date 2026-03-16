@@ -9,11 +9,15 @@ from fastapi.responses import RedirectResponse
 sys.path.insert(0, os.path.dirname(__file__))
 
 from core.config import settings
+from database import init_db
 from routers import health, domains, experiments, strategies
+from routers import campaigns
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Initialise SQLite database and create tables
+    init_db()
     print(f"Starting {settings.app_name} v{settings.app_version}")
     try:
         import bofire
@@ -46,21 +50,31 @@ app = FastAPI(
             "description": "Server health and diagnostics.",
         },
         {
+            "name": "Campaigns",
+            "description": (
+                "A **Campaign** is the top-level container for an optimization problem. "
+                "It holds the BoFire domain (design space + objectives), an optional strategy, "
+                "optional LLM context, all experiment observations, and a full history of proposals. "
+                "All optimization work should be done through campaigns."
+            ),
+        },
+        {
             "name": "Domains",
             "description": (
-                "Manage optimization domains — define the design space (inputs) "
-                "and objectives (outputs) of your experiment."
+                "Low-level domain management — define the design space (inputs) "
+                "and objectives (outputs) without a full campaign. "
+                "Prefer using Campaigns for end-to-end optimization workflows."
             ),
         },
         {
             "name": "Experiments",
-            "description": "Add and inspect observed experiment results for a domain.",
+            "description": "Add and inspect observed experiment results for a standalone domain.",
         },
         {
             "name": "Strategies",
             "description": (
-                "Ask the API to suggest the next batch of experiments using a "
-                "BoFire optimization strategy (Sobol initialization, Random, or Bayesian BO)."
+                "Low-level strategy execution on a standalone domain. "
+                "Prefer using Campaign proposals for tracked workflows."
             ),
         },
     ],
@@ -73,6 +87,7 @@ def root():
 
 
 app.include_router(health.router)
+app.include_router(campaigns.router)
 app.include_router(domains.router)
 app.include_router(experiments.router)
 app.include_router(strategies.router)
