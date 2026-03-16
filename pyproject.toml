@@ -1,53 +1,58 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "bofirepp-api"
 version = "0.1.0"
 description = "A REST API built on top of BoFire, providing Bayesian optimization capabilities over HTTP with Swagger UI documentation."
 readme = "README.md"
-license = { text = "BSD-3-Clause" }
-requires-python = ">=3.10"
-dependencies = [
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.32.0",
-    "pydantic>=2.9.0",
-    "pydantic-settings>=2.0.0",
-    "sqlalchemy>=2.0.0",
-    "bofire>=0.0.14",
-    "pandas>=2.0.0",
-    "numpy>=1.26.0",
-    "python-multipart>=0.0.12",
-    "httpx>=0.27.0",
-    "google-genai>=1.0.0",
+license = "BSD-3-Clause"
+packages = [
+    {include = "core"},
+    {include = "db"},
+    {include = "llm"},
+    {include = "models"},
+    {include = "routers"},
+    {include = "storage"},
 ]
 
-[project.optional-dependencies]
-optimization = [
-    "bofire[optimization]>=0.0.14",
-    "torch",
-    "botorch",
-    "scipy",
-]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "httpx>=0.27.0",
-    "ruff>=0.4.0",
-    "mypy>=1.10.0",
-]
+[tool.poetry.dependencies]
+python = ">=3.10"
+fastapi = ">=0.115.0"
+uvicorn = {extras = ["standard"], version = ">=0.32.0"}
+pydantic = ">=2.9.0"
+pydantic-settings = ">=2.0.0"
+sqlalchemy = ">=2.0.0"
+bofire = {extras = ["optimization"], version = ">=0.0.14"}
+pandas = ">=2.0.0"
+numpy = ">=1.26.0"
+python-multipart = ">=0.0.12"
+httpx = ">=0.27.0"
+google-genai = ">=1.0.0"
+apollo-client = {version = "*", source = "cds-pypi"}
 
-[project.urls]
-Homepage = "https://github.com/KislayaRavi/bofirepp-api"
-Repository = "https://github.com/KislayaRavi/bofirepp-api"
-Issues = "https://github.com/KislayaRavi/bofirepp-api/issues"
+[tool.poetry.group.optimization.dependencies]
+torch = "*"
+botorch = "*"
+scipy = "*"
 
-[project.scripts]
-bofirepp-api = "main:app"
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0.0"
+pytest-asyncio = ">=0.23.0"
+httpx = ">=0.27.0"
+ruff = ">=0.4.0"
+mypy = ">=1.10.0"
 
-[tool.hatch.build.targets.wheel]
-packages = ["."]
+[[tool.poetry.source]]
+name = "cds-pypi"
+url = "https://nexus-ods.apps.eu-dev.ocp.aws.boehringer.com/repository/pypi-cds-dev-local/simple/"
+priority = "supplemental"
+
+[[tool.poetry.source]]
+name = "cloudlabpypi"
+url = "https://nexus-ods.apps.eu-dev.ocp.aws.boehringer.com/repository/cloudlab-pypi/simple/"
+priority = "supplemental"
 
 [tool.ruff]
 line-length = 100

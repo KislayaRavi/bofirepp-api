@@ -38,3 +38,7 @@ campaigns_data/*
 .idea/
 .vscode/
 *.swp
+
+# Add poetry.lock
+poetry.lock
+pyproject.toml

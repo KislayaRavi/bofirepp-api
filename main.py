@@ -12,6 +12,7 @@ from core.config import settings
 from storage import init_storage
 from routers import health, domains, experiments, strategies
 from routers import campaigns
+from routers import llm
 
 
 @asynccontextmanager
@@ -81,6 +82,13 @@ app = FastAPI(
                 "Prefer using Campaign proposals for tracked workflows."
             ),
         },
+        {
+            "name": "LLM",
+            "description": (
+                "Single-turn text generation via Apollo-backed LLMs "
+                "(OpenAI and Anthropic)."
+            ),
+        },
     ],
 )
 
@@ -95,6 +103,7 @@ app.include_router(campaigns.router)
 app.include_router(domains.router)
 app.include_router(experiments.router)
 app.include_router(strategies.router)
+app.include_router(llm.router)
 
 
 if __name__ == "__main__":
