@@ -26,5 +26,5 @@ def get_db():
 
 
 def init_db():
-    from db import models  # noqa: F401 — registers all ORM models
+    from . import models  # noqa: F401 — registers all ORM models
     Base.metadata.create_all(bind=engine)

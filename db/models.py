@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy import Column, String, Text, DateTime
-from database import Base
+from .database import Base
 
 
 def _now():
